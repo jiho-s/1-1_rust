@@ -9,16 +9,21 @@ impl MigrationTrait for Migration {
         manager
             .create_table(
                 Table::create()
-                    .table(Board::Table)
+                    .table(Ticket::Table)
                     .if_not_exists()
                     .col(
-                        ColumnDef::new(Board::Id)
+                        ColumnDef::new(Ticket::Id)
                             .integer()
                             .not_null()
                             .auto_increment()
                             .primary_key(),
                     )
-                    .col(ColumnDef::new(Board::Id).char_len(128).not_null())
+                    .col(ColumnDef::new(Ticket::SwimlaneId).integer().not_null())
+                    .col(ColumnDef::new(Ticket::Name).char_len(128).not_null())
+                    .col(ColumnDef::new(Ticket::Description).char_len(512))
+                    .col(ColumnDef::new(Ticket::StartDate).date_time())
+                    .col(ColumnDef::new(Ticket::EndDate).date_time())
+                    .col(ColumnDef::new(Ticket::Priority).char_len(52).not_null())
                     .to_owned(),
             )
             .await
@@ -26,14 +31,19 @@ impl MigrationTrait for Migration {
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
-            .drop_table(Table::drop().table(Board::Table).to_owned())
+            .drop_table(Table::drop().table(Ticket::Table).to_owned())
             .await
     }
 }
 
 #[derive(DeriveIden)]
-enum Board {
+enum Ticket {
     Table,
     Id,
+    SwimlaneId,
     Name,
+    Description,
+    StartDate,
+    EndDate,
+    Priority
 }

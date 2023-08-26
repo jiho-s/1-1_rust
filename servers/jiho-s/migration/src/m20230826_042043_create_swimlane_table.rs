@@ -9,16 +9,18 @@ impl MigrationTrait for Migration {
         manager
             .create_table(
                 Table::create()
-                    .table(Board::Table)
+                    .table(Swimlane::Table)
                     .if_not_exists()
                     .col(
-                        ColumnDef::new(Board::Id)
+                        ColumnDef::new(Swimlane::Id)
                             .integer()
                             .not_null()
                             .auto_increment()
                             .primary_key(),
                     )
-                    .col(ColumnDef::new(Board::Id).char_len(128).not_null())
+                    .col(ColumnDef::new(Swimlane::Name).char_len(128).not_null())
+                    .col(ColumnDef::new(Swimlane::Description).char_len(512))
+                    .col(ColumnDef::new(Swimlane::BoardId).integer().not_null())
                     .to_owned(),
             )
             .await
@@ -26,14 +28,16 @@ impl MigrationTrait for Migration {
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
-            .drop_table(Table::drop().table(Board::Table).to_owned())
+            .drop_table(Table::drop().table(Swimlane::Table).to_owned())
             .await
     }
 }
 
 #[derive(DeriveIden)]
-enum Board {
+enum Swimlane {
     Table,
     Id,
     Name,
+    Description,
+    BoardId,
 }
