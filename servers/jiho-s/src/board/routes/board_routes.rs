@@ -1,8 +1,8 @@
-use actix_web::{delete, get, HttpResponse, post, Scope, web};
-use sea_orm::{ActiveModelTrait, DatabaseConnection, DbErr, EntityTrait, ModelTrait, NotSet};
+use actix_web::{delete, get, HttpResponse, post, put, Scope, web};
+use sea_orm::{ActiveModelTrait, DatabaseConnection, DbErr, EntityTrait, IntoActiveModel, ModelTrait, NotSet};
 use sea_orm::ActiveValue::Set;
 
-use crate::board::routes::board_dto::{BoardResponseDto, CreateBoardRequestDto};
+use crate::board::routes::board_dto::{BoardResponseDto, CreateBoardRequestDto, UpdateBoardRequestDto};
 use crate::entities::board;
 use crate::entities::prelude::Board;
 
@@ -89,10 +89,36 @@ async fn get_all_boards(
     Board::find().all(connection).await
 }
 
+#[put("/{id}")]
+pub async fn put_boards(
+    path: web::Path<i32>,
+    json: web::Json<UpdateBoardRequestDto>,
+    connection: web::Data<DatabaseConnection>,
+) -> HttpResponse {
+    let board_id = path.into_inner();
+    let new_board_name = json.into_inner().name;
+    match update_boards(connection.get_ref(), board_id, new_board_name).await {
+        Ok(board) => HttpResponse::Ok().json(BoardResponseDto::from(board)),
+        Err(_) => HttpResponse::InternalServerError().finish(),
+    }
+}
+
+async fn update_boards(
+    connection: &DatabaseConnection,
+    id: i32,
+    name: String,
+) -> Result<board::Model, DbErr> {
+    let board = Board::find_by_id(id).one(connection).await?.expect("Not Found");
+    let mut active_board = board.into_active_model();
+    active_board.name = Set(name);
+    active_board.update(connection).await
+}
+
 pub fn board_scope() -> Scope {
     web::scope("/api/boards")
         .service(add_board)
         .service(delete_board)
         .service(get_board)
         .service(get_boards)
+        .service(put_boards)
 }

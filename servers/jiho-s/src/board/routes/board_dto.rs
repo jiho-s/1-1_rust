@@ -12,6 +12,11 @@ pub struct BoardResponseDto {
     pub name: String,
 }
 
+#[derive(serde::Deserialize)]
+pub struct UpdateBoardRequestDto {
+    pub name: String,
+}
+
 impl From<board::Model> for BoardResponseDto {
     fn from(value: board::Model) -> Self {
         BoardResponseDto {
