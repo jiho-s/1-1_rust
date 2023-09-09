@@ -1,7 +1,9 @@
-use actix_web::{App, HttpServer, Responder, web};
+use std::net::TcpListener;
+
 use sea_orm::Database;
 
 use jiho_web::configuration::get_configuration;
+use jiho_web::startup::run;
 use jiho_web::telemetry::{get_subscriber, init_subscriber};
 use migration::{Migrator, MigratorTrait};
 
@@ -16,17 +18,7 @@ async fn main() -> std::io::Result<()> {
         .expect("Failed to connect database.");
     Migrator::up(&db, None).await.unwrap();
 
+    let listener = TcpListener::bind(configuration.application.address())?;
 
-    HttpServer::new(move || {
-        App::new()
-            .app_data(web::Data::new(db.clone()))
-            .route("/", web::get().to(greet))
-    })
-        .bind("127.0.0.1:10004")?
-        .run()
-        .await
-}
-
-async fn greet() -> impl Responder {
-    format!("Hello world!")
+    run(listener, db)?.await
 }

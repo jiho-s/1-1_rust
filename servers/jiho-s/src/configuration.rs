@@ -1,4 +1,3 @@
-use std::time::Duration;
 use log::LevelFilter;
 use sea_orm::ConnectOptions;
 use secrecy::{ExposeSecret, Secret};
@@ -84,6 +83,15 @@ impl TryFrom<String> for Environment {
                 other
             )),
         }
+    }
+}
+
+impl ApplicationSettings {
+    pub fn address(&self) -> String {
+        format!("{}:{}",
+                self.host,
+                self.port
+        )
     }
 }
 
