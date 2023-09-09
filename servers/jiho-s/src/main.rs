@@ -7,7 +7,7 @@ use jiho_web::startup::run;
 use jiho_web::telemetry::{get_subscriber, init_subscriber};
 use migration::{Migrator, MigratorTrait};
 
-#[tokio::main]
+#[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let subscriber = get_subscriber("jiho-todo".into(), "info".into(), std::io::stdout);
     init_subscriber(subscriber);

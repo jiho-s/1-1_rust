@@ -3,6 +3,7 @@ use actix_web::{App, HttpServer, web};
 use actix_web::dev::Server;
 use sea_orm::DatabaseConnection;
 use tracing_actix_web::TracingLogger;
+use crate::board::routes::board_routes::board_scope;
 
 pub fn run(
     listener: TcpListener,
@@ -13,6 +14,9 @@ pub fn run(
         App::new()
             .wrap(TracingLogger::default())
             .app_data(db_pool.clone())
+            .service(
+                board_scope()
+            )
     })
         .listen(listener)?
         .run();
