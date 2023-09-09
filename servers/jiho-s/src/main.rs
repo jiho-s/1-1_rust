@@ -1,11 +1,7 @@
 use actix_web::{App, HttpServer, Responder, web};
 use sea_orm::{Database, DatabaseConnection, EntityTrait};
-use tracing_subscriber::fmt::format;
 
 use migration::{Migrator, MigratorTrait};
-use crate::entities::prelude::Post;
-
-mod entities;
 
 const DATABASE_URL: &str = "postgres://postgres:password@localhost:5432/todo";
 

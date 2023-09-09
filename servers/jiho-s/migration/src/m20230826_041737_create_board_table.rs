@@ -18,7 +18,7 @@ impl MigrationTrait for Migration {
                             .auto_increment()
                             .primary_key(),
                     )
-                    .col(ColumnDef::new(Board::Id).char_len(128).not_null())
+                    .col(ColumnDef::new(Board::Name).char_len(128).not_null())
                     .to_owned(),
             )
             .await
