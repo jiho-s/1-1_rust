@@ -1,11 +1,9 @@
 use actix_web::{App, HttpServer, Responder, web};
-use sea_orm::{Database, DatabaseConnection, EntityTrait};
+use sea_orm::Database;
+
 use jiho_web::configuration::get_configuration;
 use jiho_web::telemetry::{get_subscriber, init_subscriber};
-
 use migration::{Migrator, MigratorTrait};
-
-const DATABASE_URL: &str = "postgres://postgres:password@localhost:5432/todo";
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
@@ -14,7 +12,8 @@ async fn main() -> std::io::Result<()> {
 
     let configuration = get_configuration().expect("Failed to read configuration.");
 
-    let db = Database::connect(DATABASE_URL).await.unwrap();
+    let db = Database::connect(configuration.database.option()).await
+        .expect("Failed to connect database.");
     Migrator::up(&db, None).await.unwrap();
 
 

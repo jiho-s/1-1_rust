@@ -1,4 +1,7 @@
-use secrecy::Secret;
+use std::time::Duration;
+use log::LevelFilter;
+use sea_orm::ConnectOptions;
+use secrecy::{ExposeSecret, Secret};
 use serde_aux::field_attributes::deserialize_number_from_string;
 
 #[derive(serde::Deserialize, Clone)]
@@ -81,5 +84,19 @@ impl TryFrom<String> for Environment {
                 other
             )),
         }
+    }
+}
+
+impl DatabaseSettings {
+    pub fn url(&self) -> String {
+        format!("postgres://{}:{}@{}:{}/{}", self.username, self.password.expose_secret(), self.host, self.port, self.database_name)
+    }
+    pub fn option(&self) -> ConnectOptions {
+        ConnectOptions::new(self.url())
+            .max_connections(100)
+            .min_connections(5)
+            .sqlx_logging(true)
+            .sqlx_logging_level(LevelFilter::Trace)
+            .to_owned()
     }
 }
