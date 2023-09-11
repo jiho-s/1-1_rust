@@ -20,6 +20,5 @@ pub fn run(
     })
         .listen(listener)?
         .run();
-
     Ok(server)
 }

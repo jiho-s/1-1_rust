@@ -1,5 +1,4 @@
-use crate::entities::board;
-use crate::entities::board::Model;
+use crate::board::domain::board::Board;
 
 #[derive(serde::Deserialize)]
 pub struct CreateBoardRequestDto {
@@ -17,8 +16,8 @@ pub struct UpdateBoardRequestDto {
     pub name: String,
 }
 
-impl From<board::Model> for BoardResponseDto {
-    fn from(value: board::Model) -> Self {
+impl From<Board> for BoardResponseDto {
+    fn from(value: Board) -> Self {
         BoardResponseDto {
             id: value.id,
             name: value.name,
@@ -26,8 +25,8 @@ impl From<board::Model> for BoardResponseDto {
     }
 }
 
-impl From<&board::Model> for BoardResponseDto {
-    fn from(value: &Model) -> Self {
+impl From<&Board> for BoardResponseDto {
+    fn from(value: &Board) -> Self {
         BoardResponseDto {
             id: value.id,
             name: value.name.to_owned(),

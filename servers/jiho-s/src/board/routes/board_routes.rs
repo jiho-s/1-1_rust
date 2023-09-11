@@ -1,92 +1,57 @@
-use actix_web::{delete, get, HttpResponse, post, put, Scope, web};
-use sea_orm::{ActiveModelTrait, DatabaseConnection, DbErr, EntityTrait, IntoActiveModel, ModelTrait, NotSet};
-use sea_orm::ActiveValue::Set;
+use actix_web::{delete, get, post, put, Responder, Scope, web};
+use actix_web::web::Json;
+use sea_orm::DatabaseConnection;
 
+use crate::board::application::error::board_error::BoardPortError;
+use crate::board::application::service::board_service::{create, delete, get, get_all, update};
 use crate::board::routes::board_dto::{BoardResponseDto, CreateBoardRequestDto, UpdateBoardRequestDto};
-use crate::entities::board;
-use crate::entities::prelude::Board;
 
 #[post("")]
-pub async fn add_board(
+async fn add_board(
     json: web::Json<CreateBoardRequestDto>,
     connection: web::Data<DatabaseConnection>,
-) -> HttpResponse {
+) -> Result<impl Responder, BoardPortError> {
     let new_board_name = json.into_inner().name;
-    match insert_board(connection.get_ref(), new_board_name).await {
-        Ok(board) => HttpResponse::Ok().json(BoardResponseDto::from(board)),
-        Err(_) => HttpResponse::InternalServerError().finish(),
-    }
-}
-
-async fn insert_board(
-    connection: &DatabaseConnection,
-    name: String,
-) -> Result<board::Model, DbErr> {
-    let board = board::ActiveModel {
-        id: NotSet,
-        name: Set(name),
-    };
-
-    board.save(connection).await?.try_into()
+    create(new_board_name, connection.get_ref())
+        .await
+        .map(BoardResponseDto::from)
+        .map(Json)
 }
 
 #[delete("/{board_id}")]
-pub async fn delete_board(
+async fn delete_board(
     path: web::Path<i32>,
     connection: web::Data<DatabaseConnection>,
-) -> HttpResponse {
+) -> Result<impl Responder, BoardPortError> {
     let board_id = path.into_inner();
-    if remove_board(connection.get_ref(), board_id).await.is_err() {
-        return HttpResponse::InternalServerError().finish();
-    };
-    HttpResponse::Ok().finish()
-}
-
-async fn remove_board(
-    connection: &DatabaseConnection,
-    id: i32,
-) -> Result<(), anyhow::Error> {
-    let board = Board::find_by_id(id).one(connection).await?
-        .expect("Board NotFound");
-
-    board.delete(connection).await?;
-    Ok(())
+    delete(board_id, connection.get_ref())
+        .await
+        .map(Json)
 }
 
 #[get("/{board_id}")]
 pub async fn get_board(
     path: web::Path<i32>,
     connection: web::Data<DatabaseConnection>,
-) -> HttpResponse {
+) -> Result<impl Responder, BoardPortError> {
     let board_id = path.into_inner();
-    match get_board_by_id(connection.get_ref(), board_id).await {
-        Ok(board) => HttpResponse::Ok().json(BoardResponseDto::from(board)),
-        Err(_) => HttpResponse::InternalServerError().finish(),
-    }
-}
-
-async fn get_board_by_id(
-    connection: &DatabaseConnection,
-    id: i32,
-) -> Result<board::Model, DbErr> {
-    let option = Board::find_by_id(id).one(connection).await?;
-    Ok(option.expect(""))
+    get(board_id, connection.get_ref())
+        .await
+        .map(BoardResponseDto::from)
+        .map(Json)
 }
 
 #[get("")]
 pub async fn get_boards(
     connection: web::Data<DatabaseConnection>,
-) -> HttpResponse {
-    match get_all_boards(connection.get_ref()).await {
-        Ok(boards) => HttpResponse::Ok().json(boards.iter().map(BoardResponseDto::from).collect::<Vec<BoardResponseDto>>()),
-        Err(_) => HttpResponse::InternalServerError().finish(),
-    }
-}
+) -> Result<impl Responder, BoardPortError> {
+    let result: Vec<BoardResponseDto> = get_all(connection.get_ref())
+        .await?
+        .iter()
+        .map(BoardResponseDto::from)
+        .collect();
 
-async fn get_all_boards(
-    connection: &DatabaseConnection,
-) -> Result<Vec<board::Model>, DbErr> {
-    Board::find().all(connection).await
+    Ok(Json(result))
 }
 
 #[put("/{id}")]
@@ -94,24 +59,13 @@ pub async fn put_boards(
     path: web::Path<i32>,
     json: web::Json<UpdateBoardRequestDto>,
     connection: web::Data<DatabaseConnection>,
-) -> HttpResponse {
+) -> Result<impl Responder, BoardPortError> {
     let board_id = path.into_inner();
     let new_board_name = json.into_inner().name;
-    match update_boards(connection.get_ref(), board_id, new_board_name).await {
-        Ok(board) => HttpResponse::Ok().json(BoardResponseDto::from(board)),
-        Err(_) => HttpResponse::InternalServerError().finish(),
-    }
-}
-
-async fn update_boards(
-    connection: &DatabaseConnection,
-    id: i32,
-    name: String,
-) -> Result<board::Model, DbErr> {
-    let board = Board::find_by_id(id).one(connection).await?.expect("Not Found");
-    let mut active_board = board.into_active_model();
-    active_board.name = Set(name);
-    active_board.update(connection).await
+    update(board_id, new_board_name, connection.get_ref())
+        .await
+        .map(BoardResponseDto::from)
+        .map(Json)
 }
 
 pub fn board_scope() -> Scope {
